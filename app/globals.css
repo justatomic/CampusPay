@@ -15,15 +15,6 @@
   --danger: #ef4444;
 }
 
-@theme inline {
-  --color-navy: var(--navy);
-  --color-navy-mid: var(--navy-mid);
-  --color-navy-light: var(--navy-light);
-  --color-electric: var(--electric);
-  --color-electric-bright: var(--electric-bright);
-  --color-electric-glow: var(--electric-glow);
-}
-
 * {
   box-sizing: border-box;
 }
