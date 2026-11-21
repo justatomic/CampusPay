@@ -139,19 +139,16 @@ export async function sendPayment(
     const transaction = txBuilder.build();
     const xdr = transaction.toXDR();
 
-    // Sign with Freighter
-    const freighter = await import('@stellar/freighter-api');
-    const signFn = (freighter as any).signTransaction;
-    if (!signFn) throw new Error('signTransaction not available in Freighter');
-    const result = await signFn(xdr, {
+    // Sign with Varial (Freighter) wallet — v6 returns { signedTxXdr, error? }
+    const { signTransaction } = await import('@stellar/freighter-api');
+    const result = await signTransaction(xdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
 
+    if (result.error) throw new Error(result.error.message ?? 'User cancelled signing');
     if (!result.signedTxXdr) throw new Error('User cancelled signing');
 
-    // Parse the returned XDR (Freighter API v2 returns object)
-    const signedXdr =
-      typeof result === 'string' ? result : result.signedTxXdr;
+    const signedXdr = result.signedTxXdr;
 
     const { TransactionBuilder: TxBuilder } = await import('@stellar/stellar-sdk');
     const signedTx = TxBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
@@ -173,28 +170,45 @@ export async function fundTestnetAccount(publicKey: string): Promise<boolean> {
   }
 }
 
-/** Check if Freighter is installed */
+/** Check if Varial (Freighter) wallet extension is installed */
 export async function isFreighterInstalled(): Promise<boolean> {
   try {
     const { isConnected } = await import('@stellar/freighter-api');
     const result = await isConnected();
-    return typeof result === 'boolean' ? result : (result as any).isConnected;
+    // v6 returns { isConnected: boolean, error?: ... }
+    if (typeof result === 'boolean') return result;
+    if (result.error) return false;
+    return result.isConnected ?? false;
   } catch {
     return false;
   }
 }
 
-/** Get public key from Freighter */
+/** Request access and get public key from Varial (Freighter) wallet.
+ *  - First calls requestAccess() which triggers the wallet popup
+ *  - Falls back to getAddress() if already allowed
+ */
 export async function getFreighterPublicKey(): Promise<string | null> {
   try {
-    const freighter = await import('@stellar/freighter-api');
-    // Freighter v2 uses getAddress; v1 used getPublicKey
-    const getFn = (freighter as any).getAddress || (freighter as any).getPublicKey;
-    if (!getFn) throw new Error('No address getter in Freighter');
-    const result = await getFn();
-    if (typeof result === 'string') return result;
-    return (result as any).address || (result as any).publicKey || null;
-  } catch {
-    return null;
+    const { requestAccess, getAddress, isAllowed } = await import('@stellar/freighter-api');
+
+    // Check if already allowed — if not, requestAccess triggers the popup
+    const allowedResult = await isAllowed();
+    let result: { address: string; error?: any };
+
+    if (!allowedResult.isAllowed) {
+      // This opens the Varial wallet approval popup
+      result = await requestAccess();
+    } else {
+      result = await getAddress();
+    }
+
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Wallet returned an error');
+    }
+
+    return result.address || null;
+  } catch (err: any) {
+    throw err; // Let wallet-context surface the real message
   }
 }
