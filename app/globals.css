@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+:root {
+  --navy: #0a1628;
+  --navy-mid: #0f2044;
+  --navy-light: #1a3160;
+  --electric: #3b82f6;
+  --electric-bright: #60a5fa;
+  --electric-glow: #93c5fd;
+  --white: #ffffff;
+  --white-80: rgba(255,255,255,0.8);
+  --white-20: rgba(255,255,255,0.08);
+  --white-10: rgba(255,255,255,0.05);
+  --success: #10b981;
+  --danger: #ef4444;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-mid: var(--navy-mid);
+  --color-navy-light: var(--navy-light);
+  --color-electric: var(--electric);
+  --color-electric-bright: var(--electric-bright);
+  --color-electric-glow: var(--electric-glow);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--navy);
+  color: var(--white);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.glass-card {
+  background: var(--white-10);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+}
+
+.glass-card-hover {
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.glass-card-hover:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.glow-blue {
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--white-20);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.input-field {
+  background: var(--white-10);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: white;
+  padding: 12px 16px;
+  font-size: 15px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-field::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.input-field:focus {
+  border-color: rgba(59,130,246,0.6);
+}
+
+.tab-active {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+  50% { box-shadow: 0 0 40px rgba(59,130,246,0.4); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slide-up 0.35s ease forwards;
+}
