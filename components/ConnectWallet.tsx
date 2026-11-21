@@ -5,7 +5,7 @@ import { useWallet } from '@/lib/wallet-context';
 import { Spinner } from './ui/Spinner';
 
 export function ConnectWallet() {
-  const { connect, wallet, freighterAvailable } = useWallet();
+  const { connect, wallet, varialAvailable } = useWallet();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6"
@@ -27,23 +27,23 @@ export function ConnectWallet() {
       <div className="glass-card p-8 w-full max-w-sm">
         <h2 className="text-xl font-semibold text-white mb-1">Connect your wallet</h2>
         <p className="text-white/40 text-sm mb-6 leading-relaxed">
-          Link your Freighter wallet to send, receive, and split XLM with other students.
+          Link your Varial wallet to send, receive, and split XLM with other students.
         </p>
 
-        {!freighterAvailable ? (
+        {!varialAvailable ? (
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <span className="text-red-400 text-xs mt-0.5 leading-relaxed">
-                Freighter wallet is not installed. Install it to continue.
+                Varial wallet is not installed. Install it to continue.
               </span>
             </div>
             <a
-              href="https://freighter.app"
+              href="https://varialwallet.com"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              Install Freighter
+              Install Varial Wallet
               <ExternalLink size={15} />
             </a>
           </div>
@@ -61,7 +61,7 @@ export function ConnectWallet() {
             ) : (
               <>
                 <Wallet size={16} />
-                Connect Freighter
+                Connect Varial
                 <ArrowRight size={15} className="ml-auto" />
               </>
             )}
