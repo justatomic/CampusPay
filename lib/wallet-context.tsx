@@ -15,7 +15,7 @@ interface WalletContextValue {
   connect: () => Promise<void>;
   disconnect: () => void;
   refresh: () => Promise<void>;
-  freighterAvailable: boolean;
+  varialAvailable: boolean;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -29,18 +29,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [freighterAvailable, setFreighterAvailable] = useState(false);
+  const [varialAvailable, setVarialAvailable] = useState(false);
 
-  // Check Freighter on mount
+  // Check Varial Wallet on mount
   useEffect(() => {
-    isFreighterInstalled().then(setFreighterAvailable);
+    isFreighterInstalled().then(setVarialAvailable);
   }, []);
 
   const connect = useCallback(async () => {
     setWallet((w) => ({ ...w, loading: true, error: null }));
     try {
       const pubKey = await getFreighterPublicKey();
-      if (!pubKey) throw new Error('Could not get public key from Freighter');
+      if (!pubKey) throw new Error('Could not get public key from Varial Wallet');
 
       const balance = await getBalance(pubKey);
       const txs = await getTransactions(pubKey);
@@ -83,7 +83,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <WalletContext.Provider
-      value={{ wallet, transactions, connect, disconnect, refresh, freighterAvailable }}
+      value={{ wallet, transactions, connect, disconnect, refresh, varialAvailable }}
     >
       {children}
     </WalletContext.Provider>
