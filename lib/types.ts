@@ -1,43 +1,31 @@
-export interface WalletState {
-  publicKey: string | null;
-  balance: string | null;
-  connected: boolean;
-  loading: boolean;
-  error: string | null;
+export type UserRole = 'customer' | 'business';
+
+export interface BusinessProfile {
+  name:     string;
+  category: string;
+  photoUrl: string;
 }
 
-export interface Transaction {
-  id: string;
-  type: 'send' | 'receive';
-  amount: string;
-  asset: string;
+export interface UserProfile {
+  role:     UserRole;
+  business: BusinessProfile;
+}
+
+export interface TxRecord {
+  id:           string;
+  type:         'send' | 'receive';
+  amount:       string;
+  asset:        string;
   counterparty: string;
-  memo: string;
-  createdAt: string;
-  successful: boolean;
+  memo:         string;
+  createdAt:    string;
 }
 
-export interface SplitBill {
-  id: string;
-  title: string;
-  totalAmount: string;
-  participants: Participant[];
-  createdAt: string;
-  status: 'pending' | 'settled';
-}
+export type TabId = 'dashboard' | 'send' | 'receive' | 'split' | 'history' | 'settings';
+export type BizTabId = 'pos' | 'history' | 'settings';
 
-export interface Participant {
-  address: string;
-  alias: string;
-  amount: string;
-  paid: boolean;
+export interface ToastMsg {
+  id:      string;
+  type:    'success' | 'error' | 'info';
+  message: string;
 }
-
-export interface QRPaymentData {
-  address: string;
-  amount?: string;
-  memo?: string;
-  asset?: string;
-}
-
-export type TabId = 'dashboard' | 'send' | 'receive' | 'split' | 'history';
