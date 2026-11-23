@@ -1,24 +1,23 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Copy, Download, Check, QrCode } from 'lucide-react';
+import { Copy, Download, Check, Share2 } from 'lucide-react';
 import { useWallet } from '@/lib/wallet-context';
-import QRCode from 'react-qrcode-logo';
+import QRCode       from 'react-qrcode-logo';
 
 export function ReceivePayment() {
-  const { wallet } = useWallet();
+  const { wallet }   = useWallet();
   const [amount, setAmount] = useState('');
-  const [memo, setMemo] = useState('');
+  const [memo, setMemo]     = useState('');
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const address = wallet.publicKey || '';
 
-  // Build a Stellar payment URI
   const buildQRData = () => {
     let uri = `web+stellar:pay?destination=${address}`;
     if (amount) uri += `&amount=${amount}`;
-    if (memo) uri += `&memo=${encodeURIComponent(memo)}`;
+    if (memo)   uri += `&memo=${encodeURIComponent(memo)}`;
     return uri;
   };
 
@@ -38,99 +37,104 @@ export function ReceivePayment() {
     link.click();
   };
 
-  return (
-    <div className="space-y-5">
-      {/* QR Code */}
-      <div className="glass-card p-6 flex flex-col items-center gap-4">
-        <div
-          ref={qrRef}
-          className="rounded-2xl overflow-hidden p-3 bg-white"
-          style={{ lineHeight: 0 }}
-        >
-          <QRCode
-            value={buildQRData()}
-            size={200}
-            bgColor="#ffffff"
-            fgColor="#0a1628"
-            qrStyle="dots"
-            eyeRadius={8}
-            logoImage="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI4IiBmaWxsPSIjMWQ0ZWQ4Ii8+PHBhdGggZD0iTTE2IDhMMjQgMjRIOEwxNiA4WiIgZmlsbD0id2hpdGUiLz48L3N2Zz4="
-            logoWidth={36}
-            logoHeight={36}
-            logoPaddingStyle="circle"
-          />
-        </div>
+  const shareLink = async () => {
+    const url = `web+stellar:pay?destination=${address}${amount ? `&amount=${amount}` : ''}`;
+    if (navigator.share) {
+      await navigator.share({ title: 'Pay me on CampusPay', url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
-        <div className="text-center">
-          <p className="text-white font-semibold text-sm">Your Stellar address</p>
-          <p className="text-white/40 text-xs mt-1 font-mono break-all leading-relaxed px-2">
-            {address}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* QR card */}
+      <div className="card card-p" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700 }}>Receive Payment</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+            Share your wallet address or show QR code
           </p>
         </div>
 
-        <div className="flex gap-2 w-full">
-          <button
-            onClick={copyAddress}
-            className="btn-secondary flex-1 flex items-center justify-center gap-2 py-3"
-          >
-            {copied ? (
-              <>
-                <Check size={15} className="text-emerald-400" />
-                <span className="text-emerald-400">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={15} />
-                Copy address
-              </>
-            )}
-          </button>
-          <button
-            onClick={downloadQR}
-            className="btn-secondary flex items-center justify-center gap-2 px-4 py-3"
-          >
-            <Download size={15} />
+        <div ref={qrRef} className="qr-container">
+          <QRCode
+            value={buildQRData()}
+            size={180}
+            bgColor="#ffffff"
+            fgColor="#1A3D2B"
+            qrStyle="dots"
+            eyeRadius={6}
+          />
+        </div>
+
+        {/* Address pill */}
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+            background: 'var(--bg-muted)', borderRadius: 10, padding: '10px 14px',
+          }}
+        >
+          <span style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {address}
+          </span>
+          <button onClick={copyAddress} style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+            {copied
+              ? <Check size={15} style={{ color: 'var(--success)' }} />
+              : <Copy size={15} style={{ color: 'var(--text-muted)' }} />
+            }
           </button>
         </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%' }}>
+          <button className="btn-primary" onClick={shareLink}>
+            <Share2 size={15} />Share Payment Link
+          </button>
+          <button className="btn-secondary" onClick={downloadQR}>
+            <Download size={15} />Save QR
+          </button>
+        </div>
+
+        <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
+          Anyone can send you XLM using this QR code or link.
+        </p>
       </div>
 
       {/* Request specific amount */}
-      <div className="glass-card p-5 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <QrCode size={16} className="text-blue-400" />
-          <h3 className="text-white text-sm font-semibold">Request a specific amount</h3>
-        </div>
-        <p className="text-white/40 text-xs">Set an amount and memo to generate a payment request QR.</p>
-
-        <div>
-          <label className="block text-white/50 text-xs font-medium mb-2 uppercase tracking-wider">
-            Amount (XLM)
-          </label>
-          <input
-            className="input-field"
-            type="number"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="block text-white/50 text-xs font-medium mb-2 uppercase tracking-wider">
-            Memo
-          </label>
-          <input
-            className="input-field"
-            placeholder="e.g. Lecture notes, Shared dinner…"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            maxLength={28}
-          />
-        </div>
-
-        <p className="text-white/25 text-xs">
-          The QR code above updates as you type.
+      <div className="card card-p">
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Request a specific amount</h3>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
+          Set an amount and note — the QR updates automatically.
         </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+              Amount (XLM)
+            </label>
+            <input
+              className="input-field"
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+              Note
+            </label>
+            <input
+              className="input-field"
+              placeholder="e.g. Lecture notes, Shared dinner…"
+              value={memo}
+              onChange={e => setMemo(e.target.value)}
+              maxLength={28}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

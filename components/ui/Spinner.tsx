@@ -1,20 +1,19 @@
-export function Spinner({ size = 20, color = '#3b82f6' }: { size?: number; color?: string }) {
+interface SpinnerProps { size?: number; color?: string; }
+
+export function Spinner({ size = 20, color = 'var(--green)' }: SpinnerProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      style={{ animation: 'spin 0.8s linear infinite' }}
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      style={{ animation: 'spin 0.75s linear infinite' }}
     >
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <circle cx="12" cy="12" r="10" stroke={color} strokeOpacity="0.2" strokeWidth="3" />
-      <path
-        d="M12 2a10 10 0 0 1 10 10"
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 10 10" />
     </svg>
   );
 }

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Store, User, Check, Copy, LogOut, ExternalLink, ChevronRight } from 'lucide-react';
-import { useProfile } from '@/lib/profile-context';
-import { useWallet }  from '@/lib/wallet-context';
+import { Store, User, Check, Copy, LogOut, ExternalLink, ChevronRight, Wifi, HelpCircle, Info } from 'lucide-react';
+import { useProfile }              from '@/lib/profile-context';
+import { useWallet }               from '@/lib/wallet-context';
 import { shortenAddress, formatXLM } from '@/lib/stellar';
 
 const CATS = ['Food & Drinks','Stationery','Clothing','Electronics','Pharmacy','Printing','Transport','Services','Other'];
@@ -20,7 +20,8 @@ export function CustomerSettings() {
 
   const copyAddr = async () => {
     await navigator.clipboard.writeText(wallet.publicKey ?? '');
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const activateBusiness = () => {
@@ -29,112 +30,107 @@ export function CustomerSettings() {
   };
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <h2 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>Settings</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Manage your account and preferences</p>
+      </div>
 
-      {/* Wallet card */}
-      <div className="glass-card p-5 space-y-3">
-        <h3 className="text-white text-sm font-semibold flex items-center gap-2">
-          <User size={15} className="text-blue-400" /> Your wallet
-        </h3>
-        <div>
-          <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Stellar address</p>
-          <p className="text-xs font-mono break-all leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{wallet.publicKey}</p>
+      {/* Connected wallet */}
+      <div className="card card-p">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <User size={14} style={{ color: 'var(--text-muted)' }} /> Connected Wallet
+          </span>
+          <span className="badge badge-success">Connected</span>
         </div>
-        <div className="flex gap-2">
-          <button onClick={copyAddr} className="btn-secondary flex-1 flex items-center justify-center gap-2" style={{ padding: '10px' }}>
-            {copied
-              ? <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400 text-sm">Copied!</span></>
-              : <><Copy size={13} /><span className="text-sm">Copy address</span></>
-            }
+
+        <p style={{ fontSize: 13, fontFamily: 'monospace', color: 'var(--text-muted)', wordBreak: 'break-all', marginBottom: 12 }}>
+          {wallet.publicKey}
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button className="btn-secondary" style={{ flex: 1 }} onClick={copyAddr}>
+            {copied ? <><Check size={13} style={{ color: 'var(--success)' }} />Copied!</> : <><Copy size={13} />Copy address</>}
           </button>
-          <a href={`https://stellar.expert/explorer/testnet/account/${wallet.publicKey}`}
+          <a
+            href={`https://stellar.expert/explorer/testnet/account/${wallet.publicKey}`}
             target="_blank" rel="noopener noreferrer"
-            className="btn-secondary flex items-center gap-1.5 text-sm" style={{ padding: '10px 16px' }}>
+            className="btn-secondary"
+            style={{ textDecoration: 'none' }}
+          >
             Explorer <ExternalLink size={12} />
           </a>
         </div>
-        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Balance</span>
-          <span className="text-sm font-semibold text-white">{formatXLM(wallet.balance ?? '0')} XLM</span>
+
+        <div style={{ background: 'var(--bg-muted)', borderRadius: 8, padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Balance</span>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{formatXLM(wallet.balance ?? '0')} XLM</span>
         </div>
       </div>
 
-      {/* Switch to business */}
-      <div className="glass-card p-5 space-y-4" style={{ background: 'rgba(37,99,235,0.05)', borderColor: 'rgba(37,99,235,0.2)' }}>
-        <div className="flex items-center gap-2">
-          <Store size={15} className="text-blue-400" />
-          <h3 className="text-white text-sm font-semibold">Switch to Business mode</h3>
-        </div>
-        <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Accept payments via QR code and NFC tap. Set up your store and generate your payment link. You can switch back anytime.
-        </p>
-
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>Business name</label>
-            <input className="input-field" placeholder="e.g. Mama Nkechi's Kitchen" value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>Category</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {CATS.map(c => (
-                <button key={c} onClick={() => setCat(c)}
-                  style={{
-                    padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', cursor: 'pointer',
-                    background: cat === c ? 'rgba(37,99,235,0.2)' : 'rgba(255,255,255,0.055)',
-                    border: `1px solid ${cat === c ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                    color: cat === c ? '#60a5fa' : 'rgba(255,255,255,0.5)',
-                  }}>
-                  {c}
-                </button>
-              ))}
+      {/* Settings rows */}
+      {[
+        { icon: Wifi, label: 'Network', val: 'Stellar Testnet' },
+        { icon: HelpCircle, label: 'Help & Support', val: 'Get help', href: '#' },
+        { icon: Info, label: 'About CampusPay', val: 'v1.0.0' },
+      ].map(({ icon: Icon, label, val }) => (
+        <div key={label} className="card card-p">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={16} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{label}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{val}</span>
+              <ChevronRight size={14} style={{ color: 'var(--text-faint)' }} />
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Logo URL <span className="normal-case font-normal" style={{ color: 'rgba(255,255,255,0.22)' }}>(optional)</span>
-            </label>
-            <input className="input-field" placeholder="https://…" value={photo} onChange={e => setPhoto(e.target.value)} />
-          </div>
         </div>
+      ))}
 
-        <button
-          onClick={activateBusiness}
-          disabled={!name.trim()}
-          className="btn-primary w-full flex items-center justify-center gap-2.5"
-          style={{ padding: '13px', opacity: !name.trim() ? 0.4 : 1 }}
-        >
-          <Store size={15} />
-          Activate Business mode
-          <ChevronRight size={15} style={{ marginLeft: 'auto' }} />
-        </button>
-        {!name.trim() && (
-          <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>Enter a business name to continue</p>
-        )}
-      </div>
-
-      {/* Network */}
-      <div className="glass-card p-4">
-        <p className="text-xs font-semibold mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Network</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #10b981' }} />
-            <span className="text-sm text-white">Stellar Testnet</span>
+      {/* Switch to Business */}
+      <div className="card card-p" style={{ background: 'rgba(26,61,43,0.04)', borderColor: 'rgba(26,61,43,0.15)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <Store size={15} style={{ color: 'var(--green)' }} />
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)' }}>Switch to Business mode</h3>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+          Accept payments via QR code and NFC tap. Set up your store profile.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input className="input-field" placeholder="Business name" value={name} onChange={e => setName(e.target.value)} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {CATS.map(c => (
+              <button key={c} onClick={() => setCat(c)} style={{
+                padding: '5px 11px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                background: cat === c ? 'var(--green)' : 'var(--bg-muted)',
+                border: `1px solid ${cat === c ? 'var(--green)' : 'var(--border)'}`,
+                color: cat === c ? 'white' : 'var(--text-muted)',
+              }}>
+                {c}
+              </button>
+            ))}
           </div>
-          <a href="https://laboratory.stellar.org/#account-creator?network=test" target="_blank" rel="noopener noreferrer"
-            className="text-xs text-blue-400 flex items-center gap-1 hover:text-blue-300 transition-colors">
-            Fund account <ExternalLink size={10} />
-          </a>
+          <input className="input-field" placeholder="Logo URL (optional)" value={photo} onChange={e => setPhoto(e.target.value)} />
+          <button className="btn-primary" style={{ width: '100%' }} onClick={activateBusiness} disabled={!name.trim()}>
+            <Store size={15} />Activate Business mode
+          </button>
         </div>
       </div>
 
       {/* Disconnect */}
-      <button onClick={disconnect}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm transition-colors"
-        style={{ color: 'rgba(255,255,255,0.3)' }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.7)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}>
-        <LogOut size={14} /> Disconnect wallet
+      <button
+        onClick={disconnect}
+        style={{
+          width: '100%', padding: '12px', borderRadius: 10, background: 'transparent',
+          border: '1px solid rgba(239,68,68,0.2)', color: 'var(--danger)', fontSize: 14,
+          fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        <LogOut size={15} />Disconnect wallet
       </button>
     </div>
   );

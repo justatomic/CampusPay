@@ -1,159 +1,147 @@
 'use client';
 
-import { RefreshCw, Send, QrCode, ArrowDown, ArrowUp, Users, LogOut } from 'lucide-react';
-import { useWallet } from '@/lib/wallet-context';
-import { formatXLM, shortenAddress } from '@/lib/stellar';
-import { Badge } from './ui/Badge';
-import type { TabId } from '@/lib/types';
+import { RefreshCw, Send, QrCode, ArrowDownToLine, Users, ArrowUpRight, ArrowDownLeft, TrendingUp, Wifi } from 'lucide-react';
+import { useWallet }                              from '@/lib/wallet-context';
+import { formatXLM, shortenAddress }              from '@/lib/stellar';
+import type { TabId }                             from '@/lib/types';
 
-interface DashboardProps {
-  onTabChange: (tab: TabId) => void;
-}
+interface DashboardProps { onTabChange: (tab: TabId) => void; }
 
 export function Dashboard({ onTabChange }: DashboardProps) {
-  const { wallet, transactions, refresh, disconnect } = useWallet();
+  const { wallet, transactions, refresh } = useWallet();
 
-  const totalSent = transactions
-    .filter((t) => t.type === 'send')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const totalSent     = transactions.filter(t => t.type === 'send').reduce((s, t) => s + parseFloat(t.amount), 0);
+  const totalReceived = transactions.filter(t => t.type === 'receive').reduce((s, t) => s + parseFloat(t.amount), 0);
 
-  const totalReceived = transactions
-    .filter((t) => t.type === 'receive')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const relTime = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const h = Math.floor(diff / 3600000);
+    if (h < 1)  return `${Math.floor(diff / 60000)}m ago`;
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
 
   return (
-    <div className="space-y-5">
-      {/* Balance card */}
-      <div
-        className="rounded-3xl p-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }}
-      >
-        {/* Decorative circles */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-20"
-          style={{ background: 'rgba(255,255,255,0.3)' }} />
-        <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full opacity-10"
-          style={{ background: 'rgba(255,255,255,0.4)' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4">
+      {/* Balance card */}
+      <div className="balance-card">
+        {/* Decorative circle */}
+        <div style={{
+          position: 'absolute', top: -40, right: -40, width: 160, height: 160,
+          borderRadius: '50%', background: 'rgba(255,255,255,0.05)',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <p className="text-blue-200 text-sm font-medium mb-0.5">Total balance</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-white tracking-tight">
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: 500, marginBottom: 2 }}>
+                XLM Wallet Balance
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: 34, fontWeight: 800, color: 'white', letterSpacing: '-0.03em', lineHeight: 1 }}>
                   {formatXLM(wallet.balance || '0')}
                 </span>
-                <span className="text-blue-200 text-lg font-semibold">XLM</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>XLM</span>
               </div>
-              <p className="text-blue-300 text-xs mt-1.5">{shortenAddress(wallet.publicKey || '', 8)}</p>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 4, fontFamily: 'monospace' }}>
+                {shortenAddress(wallet.publicKey || '', 8)}
+              </p>
             </div>
             <button
               onClick={refresh}
-              className="p-2 rounded-xl transition-colors"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-              title="Refresh balance"
+              style={{ padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer', color: 'white' }}
             >
-              <RefreshCw size={16} className="text-white" />
+              <RefreshCw size={15} />
             </button>
           </div>
 
-          <div className="flex gap-2 mt-4">
-            <div className="flex-1 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.12)' }}>
-              <div className="flex items-center gap-1.5 mb-1">
-                <ArrowUp size={12} className="text-emerald-300" />
-                <span className="text-blue-200 text-xs">Sent</span>
+          {/* Sent / Received sub-stats */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            {[
+              { label: 'Sent', val: totalSent, icon: ArrowUpRight, color: 'rgba(255,255,255,0.5)' },
+              { label: 'Received', val: totalReceived, icon: ArrowDownLeft, color: 'var(--lime)' },
+            ].map(({ label, val, icon: Icon, color }) => (
+              <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                  <Icon size={12} style={{ color }} />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{label}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{formatXLM(val)} XLM</span>
               </div>
-              <span className="text-white text-sm font-semibold">{formatXLM(totalSent)} XLM</span>
-            </div>
-            <div className="flex-1 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.12)' }}>
-              <div className="flex items-center gap-1.5 mb-1">
-                <ArrowDown size={12} className="text-blue-300" />
-                <span className="text-blue-200 text-xs">Received</span>
-              </div>
-              <span className="text-white text-sm font-semibold">{formatXLM(totalReceived)} XLM</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-4 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
         {[
-          { icon: Send, label: 'Send', tab: 'send' as TabId, color: '#3b82f6' },
-          { icon: QrCode, label: 'Receive', tab: 'receive' as TabId, color: '#8b5cf6' },
-          { icon: Users, label: 'Split', tab: 'split' as TabId, color: '#06b6d4' },
-          { icon: ArrowDown, label: 'History', tab: 'history' as TabId, color: '#10b981' },
-        ].map(({ icon: Icon, label, tab, color }) => (
-          <button
-            key={tab}
-            onClick={() => onTabChange(tab)}
-            className="glass-card glass-card-hover flex flex-col items-center gap-2 py-4 px-2"
-          >
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center"
-              style={{ background: `${color}20`, border: `1px solid ${color}30` }}
-            >
-              <Icon size={18} style={{ color }} />
+          { icon: Send, label: 'Send', tab: 'send' as TabId },
+          { icon: ArrowDownToLine, label: 'Receive', tab: 'receive' as TabId },
+          { icon: QrCode, label: 'Scan', tab: 'receive' as TabId },
+          { icon: Users, label: 'Split', tab: 'split' as TabId },
+        ].map(({ icon: Icon, label, tab }) => (
+          <button key={label} onClick={() => onTabChange(tab)} className="quick-action">
+            <div className="quick-action-icon">
+              <Icon size={18} style={{ color: 'var(--green)' }} />
             </div>
-            <span className="text-white/70 text-xs font-medium">{label}</span>
+            <span style={{ fontSize: 11, fontWeight: 500 }}>{label}</span>
           </button>
         ))}
       </div>
 
-      {/* Recent transactions */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white font-semibold text-sm">Recent activity</h3>
+      {/* Recent activity */}
+      <div className="card card-p">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Recent activity</h3>
           <button
             onClick={() => onTabChange('history')}
-            className="text-blue-400 text-xs font-medium hover:text-blue-300 transition-colors"
+            style={{ fontSize: 13, fontWeight: 500, color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            See all
+            See all →
           </button>
         </div>
 
         {transactions.length === 0 ? (
-          <div className="glass-card py-10 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-1"
-              style={{ background: 'rgba(255,255,255,0.05)' }}>
-              <ArrowDown size={20} className="text-white/20" />
+          <div className="empty-state" style={{ padding: '32px 16px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <TrendingUp size={20} style={{ color: 'var(--text-faint)' }} />
             </div>
-            <p className="text-white/40 text-sm">No transactions yet</p>
-            <p className="text-white/25 text-xs">Fund your account to get started</p>
+            <p style={{ fontWeight: 600, color: 'var(--text-muted)' }}>No transactions yet</p>
+            <p style={{ fontSize: 13 }}>Fund your account to get started</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {transactions.slice(0, 5).map((tx) => (
-              <div key={tx.id} className="glass-card glass-card-hover flex items-center gap-3 p-3.5">
+          <div>
+            {transactions.slice(0, 5).map((tx, i) => (
+              <div key={tx.id} className="tx-row" style={{ paddingTop: i === 0 ? 0 : 12 }}>
                 <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: tx.type === 'send' ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
-                  }}
+                  className="tx-icon"
+                  style={{ background: tx.type === 'send' ? 'var(--danger-bg)' : 'var(--success-bg)' }}
                 >
-                  {tx.type === 'send' ? (
-                    <ArrowUp size={16} className="text-red-400" />
-                  ) : (
-                    <ArrowDown size={16} className="text-emerald-400" />
-                  )}
+                  {tx.type === 'send'
+                    ? <ArrowUpRight size={17} style={{ color: 'var(--danger)' }} />
+                    : <ArrowDownLeft size={17} style={{ color: 'var(--success)' }} />
+                  }
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                     {tx.type === 'send' ? 'Sent to' : 'Received from'}{' '}
-                    <span className="text-white/60">{shortenAddress(tx.counterparty)}</span>
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      {shortenAddress(tx.counterparty)}
+                    </span>
                   </p>
                   {tx.memo && (
-                    <p className="text-white/40 text-xs truncate mt-0.5">"{tx.memo}"</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      "{tx.memo}"
+                    </p>
                   )}
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p
-                    className="text-sm font-semibold"
-                    style={{ color: tx.type === 'send' ? '#f87171' : '#34d399' }}
-                  >
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tx.type === 'send' ? 'var(--danger)' : '#16A34A' }}>
                     {tx.type === 'send' ? '−' : '+'}{formatXLM(tx.amount)} XLM
                   </p>
-                  <p className="text-white/30 text-xs mt-0.5">
-                    {new Date(tx.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
+                  <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 1 }}>
+                    {relTime(tx.createdAt)}
                   </p>
                 </div>
               </div>
@@ -162,14 +150,26 @@ export function Dashboard({ onTabChange }: DashboardProps) {
         )}
       </div>
 
-      {/* Disconnect */}
-      <button
-        onClick={disconnect}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white/30 text-sm hover:text-white/50 transition-colors"
+      {/* CampusPay Tap banner */}
+      <div
+        className="card"
+        style={{ background: 'var(--green)', border: 'none', padding: '20px', display: 'flex', alignItems: 'center', gap: 16 }}
       >
-        <LogOut size={14} />
-        Disconnect wallet
-      </button>
+        <div style={{ flex: 1 }}>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: 500 }}>Tap to pay</p>
+          <p style={{ color: 'white', fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 2 }}>
+            CampusPay <span style={{ color: 'var(--lime)' }}>Tap</span>
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4 }}>
+            Tap with your phone for instant payments.
+          </p>
+        </div>
+        <div
+          style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        >
+          <Wifi size={22} style={{ color: 'var(--lime)' }} />
+        </div>
+      </div>
     </div>
   );
 }

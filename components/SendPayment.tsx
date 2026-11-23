@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
-import { useWallet } from '@/lib/wallet-context';
+import { Send, AlertCircle, CheckCircle, ExternalLink, QrCode, ChevronRight } from 'lucide-react';
+import { useWallet }             from '@/lib/wallet-context';
 import { sendPayment, formatXLM } from '@/lib/stellar';
-import { Spinner } from './ui/Spinner';
+import { Spinner }               from './ui/Spinner';
 
 interface SendPaymentProps {
   onSuccess?: () => void;
@@ -12,153 +12,194 @@ interface SendPaymentProps {
   defaultAmount?: string;
 }
 
+type Step = 'form' | 'review';
+
 export function SendPayment({ onSuccess, defaultTo = '', defaultAmount = '' }: SendPaymentProps) {
   const { wallet, refresh } = useWallet();
-  const [to, setTo] = useState(defaultTo);
+  const [to, setTo]         = useState(defaultTo);
   const [amount, setAmount] = useState(defaultAmount);
-  const [memo, setMemo] = useState('');
+  const [memo, setMemo]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [step, setStep]     = useState<Step>('form');
   const [result, setResult] = useState<{ success: boolean; hash?: string; error?: string } | null>(null);
 
-  const isValid =
-    to.trim().length === 56 &&
-    to.trim().startsWith('G') &&
-    parseFloat(amount) > 0 &&
-    parseFloat(amount) <= parseFloat(wallet.balance || '0');
+  const isValidAddr = to.trim().length === 56 && to.trim().startsWith('G');
+  const isValidAmt  = parseFloat(amount) > 0 && parseFloat(amount) <= parseFloat(wallet.balance || '0');
+  const isValid     = isValidAddr && isValidAmt;
 
   const handleSend = async () => {
     if (!wallet.publicKey || !isValid) return;
     setLoading(true);
     setResult(null);
-
     const res = await sendPayment(wallet.publicKey, to.trim(), amount, memo);
     setResult(res);
     setLoading(false);
-
     if (res.success) {
       await refresh();
-      setTo('');
-      setAmount('');
-      setMemo('');
+      setTo(''); setAmount(''); setMemo('');
+      setStep('form');
       onSuccess?.();
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-white/50 text-xs font-medium mb-2 uppercase tracking-wider">
-          Recipient address
-        </label>
-        <input
-          className="input-field font-mono text-sm"
-          placeholder="G… (56-character Stellar address)"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          spellCheck={false}
-        />
-      </div>
-
-      <div>
-        <label className="block text-white/50 text-xs font-medium mb-2 uppercase tracking-wider">
-          Amount (XLM)
-        </label>
-        <div className="relative">
-          <input
-            className="input-field pr-20"
-            type="number"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            min="0.0000001"
-            step="any"
-          />
-          <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs font-semibold hover:text-blue-300 transition-colors"
-            onClick={() =>
-              setAmount(
-                Math.max(0, parseFloat(wallet.balance || '0') - 1).toFixed(4)
-              )
-            }
-          >
-            MAX
-          </button>
-        </div>
-        <p className="text-white/30 text-xs mt-1.5 ml-1">
-          Available: {formatXLM(wallet.balance || '0')} XLM
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-white/50 text-xs font-medium mb-2 uppercase tracking-wider">
-          Memo <span className="text-white/25 normal-case font-normal">(optional)</span>
-        </label>
-        <input
-          className="input-field"
-          placeholder="e.g. Canteen split, Lab fee…"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          maxLength={28}
-        />
-        <p className="text-white/25 text-xs mt-1 ml-1">{memo.length}/28</p>
+  if (step === 'review') return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="card card-p">
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Review payment</h3>
+        {[
+          { label: 'To', val: to, mono: true },
+          { label: 'Amount', val: `${amount} XLM` },
+          { label: 'Network fee', val: '~0.00001 XLM' },
+          { label: 'Total', val: `~${(parseFloat(amount) + 0.00001).toFixed(5)} XLM`, bold: true },
+        ].map(r => (
+          <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{r.label}</span>
+            <span style={{ fontSize: 13, fontWeight: r.bold ? 700 : 500, maxWidth: '55%', textAlign: 'right', wordBreak: 'break-all', fontFamily: r.mono ? 'monospace' : undefined }}>
+              {r.val}
+            </span>
+          </div>
+        ))}
+        {memo && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Note</span>
+            <span style={{ fontSize: 13 }}>{memo}</span>
+          </div>
+        )}
       </div>
 
       {result && (
         <div
-          className="rounded-xl p-4 flex items-start gap-3"
-          style={{
-            background: result.success ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-            border: `1px solid ${result.success ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
-          }}
+          className="card card-p"
+          style={{ background: result.success ? 'var(--success-bg)' : 'var(--danger-bg)', borderColor: result.success ? '#BBF7D0' : '#FECACA' }}
         >
-          {result.success ? (
-            <CheckCircle size={18} className="text-emerald-400 flex-shrink-0 mt-0.5" />
-          ) : (
-            <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${result.success ? 'text-emerald-300' : 'text-red-300'}`}>
-              {result.success ? 'Payment sent!' : 'Payment failed'}
-            </p>
-            {result.hash && (
-              <a
-                href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
-              >
-                View on explorer <ExternalLink size={10} />
-              </a>
-            )}
-            {result.error && (
-              <p className="text-xs text-red-400 mt-1 break-words">{result.error}</p>
-            )}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            {result.success
+              ? <CheckCircle size={18} style={{ color: 'var(--success)', flexShrink: 0 }} />
+              : <AlertCircle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+            }
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: result.success ? '#15803D' : '#DC2626' }}>
+                {result.success ? 'Payment sent!' : 'Payment failed'}
+              </p>
+              {result.hash && (
+                <a href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, textDecoration: 'none' }}>
+                  View on Stellar Explorer <ExternalLink size={11} />
+                </a>
+              )}
+              {result.error && <p style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>{result.error}</p>}
+            </div>
           </div>
         </div>
       )}
 
-      <button
-        className="btn-primary w-full flex items-center justify-center gap-2"
-        onClick={handleSend}
-        disabled={!isValid || loading}
-        style={{ opacity: !isValid || loading ? 0.5 : 1 }}
-      >
-        {loading ? (
-          <>
-            <Spinner size={16} color="white" />
-            Signing in Freighter…
-          </>
-        ) : (
-          <>
-            <Send size={15} />
-            Send {amount ? `${amount} XLM` : 'XLM'}
-          </>
-        )}
-      </button>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setStep('form')}>
+          Back
+        </button>
+        <button className="btn-primary" style={{ flex: 2 }} onClick={handleSend} disabled={loading}>
+          {loading
+            ? <><Spinner size={15} color="white" />Approving in Varial…</>
+            : <><Send size={15} />Confirm & Send</>
+          }
+        </button>
+      </div>
 
-      <p className="text-white/25 text-xs text-center">
-        Freighter will prompt you to sign the transaction
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
+        You'll approve this transaction in your Varial wallet
       </p>
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Recipient */}
+      <div className="card card-p">
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Recipient</h3>
+        <div style={{ position: 'relative' }}>
+          <input
+            className="input-field"
+            style={{ paddingRight: 44, fontFamily: 'monospace', fontSize: 13 }}
+            placeholder="Search by username or wallet address…"
+            value={to}
+            onChange={e => setTo(e.target.value)}
+            spellCheck={false}
+          />
+          <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
+            <QrCode size={16} style={{ color: 'var(--text-faint)' }} />
+          </div>
+        </div>
+        {to && !isValidAddr && (
+          <p style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}>
+            Enter a valid 56-character Stellar address (starts with G)
+          </p>
+        )}
+      </div>
+
+      {/* Amount */}
+      <div className="card card-p">
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Amount (XLM)</h3>
+        <div style={{ position: 'relative' }}>
+          <input
+            className="input-field"
+            style={{ fontSize: 24, fontWeight: 700, paddingRight: 60, color: amount ? 'var(--text)' : undefined }}
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            min="0.0000001"
+            step="any"
+          />
+          <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 14, fontWeight: 600, color: 'var(--text-muted)' }}>
+            XLM
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+            Available: {formatXLM(wallet.balance || '0')} XLM
+          </span>
+          <button
+            onClick={() => setAmount(Math.max(0, parseFloat(wallet.balance || '0') - 1).toFixed(4))}
+            style={{ fontSize: 12, fontWeight: 600, color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            MAX
+          </button>
+        </div>
+      </div>
+
+      {/* Note */}
+      <div className="card card-p">
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Note <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--text-faint)' }}>(optional)</span></h3>
+        <input
+          className="input-field"
+          placeholder="Add a note…"
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          maxLength={28}
+        />
+        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 4, textAlign: 'right' }}>{memo.length}/28</p>
+      </div>
+
+      {/* Fee summary */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 4px' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Network Fee</span>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>~0.00001 XLM</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 4px 8px' }}>
+        <span style={{ fontSize: 14, fontWeight: 700 }}>Total</span>
+        <span style={{ fontSize: 14, fontWeight: 700 }}>
+          {amount ? (parseFloat(amount) + 0.00001).toFixed(5) : '0.00'} XLM
+        </span>
+      </div>
+
+      <button
+        className="btn-primary"
+        style={{ width: '100%' }}
+        onClick={() => setStep('review')}
+        disabled={!isValid}
+      >
+        Review Payment <ChevronRight size={15} style={{ marginLeft: 'auto' }} />
+      </button>
     </div>
   );
 }
