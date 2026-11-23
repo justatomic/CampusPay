@@ -6,34 +6,34 @@ import { useProfile } from '@/lib/profile-context';
 import { useWallet }  from '@/lib/wallet-context';
 import { shortenAddress, formatXLM } from '@/lib/stellar';
 
+const CATS = ['Food & Drinks','Stationery','Clothing','Electronics','Pharmacy','Printing','Transport','Services','Other'];
+
 export function CustomerSettings() {
   const { profile, setRole, setBusiness } = useProfile();
   const { wallet, disconnect }            = useWallet();
-  const biz                               = profile.business;
+  const biz = profile.business;
 
-  const [name,  setName]  = useState(biz.name);
-  const [cat,   setCat]   = useState(biz.category);
-  const [photo, setPhoto] = useState(biz.photoUrl);
-  const [saved, setSaved] = useState(false);
+  const [name,   setName]   = useState(biz.name);
+  const [cat,    setCat]    = useState(biz.category);
+  const [photo,  setPhoto]  = useState(biz.photoUrl);
   const [copied, setCopied] = useState(false);
-
-  const saveAndSwitch = () => {
-    setBusiness({ name: name.trim(), category: cat, photoUrl: photo.trim() });
-    setRole('business');
-  };
 
   const copyAddr = async () => {
     await navigator.clipboard.writeText(wallet.publicKey ?? '');
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
-  const CATEGORIES = ['Food & Drinks','Stationery','Clothing','Electronics','Pharmacy','Printing','Transport','Services','Other'];
+  const activateBusiness = () => {
+    setBusiness({ name: name.trim(), category: cat, photoUrl: photo.trim() });
+    setRole('business');
+  };
 
   return (
     <div className="space-y-5">
-      {/* Wallet info */}
-      <div className="card p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+
+      {/* Wallet card */}
+      <div className="glass-card p-5 space-y-3">
+        <h3 className="text-white text-sm font-semibold flex items-center gap-2">
           <User size={15} className="text-blue-400" /> Your wallet
         </h3>
         <div>
@@ -41,11 +41,15 @@ export function CustomerSettings() {
           <p className="text-xs font-mono break-all leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{wallet.publicKey}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={copyAddr} className="btn-ghost flex-1 flex items-center justify-center gap-2 py-2.5 text-sm">
-            {copied ? <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">Copied!</span></> : <><Copy size={13} />Copy address</>}
+          <button onClick={copyAddr} className="btn-secondary flex-1 flex items-center justify-center gap-2" style={{ padding: '10px' }}>
+            {copied
+              ? <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400 text-sm">Copied!</span></>
+              : <><Copy size={13} /><span className="text-sm">Copy address</span></>
+            }
           </button>
-          <a href={`https://stellar.expert/explorer/testnet/account/${wallet.publicKey}`} target="_blank" rel="noopener noreferrer"
-            className="btn-ghost flex items-center gap-1.5 px-4 py-2.5 text-sm">
+          <a href={`https://stellar.expert/explorer/testnet/account/${wallet.publicKey}`}
+            target="_blank" rel="noopener noreferrer"
+            className="btn-secondary flex items-center gap-1.5 text-sm" style={{ padding: '10px 16px' }}>
             Explorer <ExternalLink size={12} />
           </a>
         </div>
@@ -56,30 +60,30 @@ export function CustomerSettings() {
       </div>
 
       {/* Switch to business */}
-      <div className="card p-5 space-y-4" style={{ borderColor: 'rgba(37,99,235,0.2)', background: 'rgba(37,99,235,0.05)' }}>
+      <div className="glass-card p-5 space-y-4" style={{ background: 'rgba(37,99,235,0.05)', borderColor: 'rgba(37,99,235,0.2)' }}>
         <div className="flex items-center gap-2">
           <Store size={15} className="text-blue-400" />
-          <h3 className="text-sm font-semibold text-white">Switch to Business mode</h3>
+          <h3 className="text-white text-sm font-semibold">Switch to Business mode</h3>
         </div>
         <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Set up your store to accept payments via QR code or NFC tap. You can switch back anytime.
+          Accept payments via QR code and NFC tap. Set up your store and generate your payment link. You can switch back anytime.
         </p>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>Business name</label>
-            <input className="field" placeholder="e.g. Mama Nkechi's Kitchen" value={name} onChange={e => setName(e.target.value)} />
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>Business name</label>
+            <input className="input-field" placeholder="e.g. Mama Nkechi's Kitchen" value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>Category</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(c => (
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>Category</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {CATS.map(c => (
                 <button key={c} onClick={() => setCat(c)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
                   style={{
+                    padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', cursor: 'pointer',
                     background: cat === c ? 'rgba(37,99,235,0.2)' : 'rgba(255,255,255,0.055)',
-                    border:     `1px solid ${cat === c ? 'rgba(37,99,235,0.45)' : 'rgba(255,255,255,0.09)'}`,
-                    color:      cat === c ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+                    border: `1px solid ${cat === c ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                    color: cat === c ? '#60a5fa' : 'rgba(255,255,255,0.5)',
                   }}>
                   {c}
                 </button>
@@ -87,33 +91,38 @@ export function CustomerSettings() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>Logo URL <span className="normal-case font-normal" style={{ color: 'rgba(255,255,255,0.22)' }}>(optional)</span></label>
-            <input className="field" placeholder="https://…" value={photo} onChange={e => setPhoto(e.target.value)} />
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Logo URL <span className="normal-case font-normal" style={{ color: 'rgba(255,255,255,0.22)' }}>(optional)</span>
+            </label>
+            <input className="input-field" placeholder="https://…" value={photo} onChange={e => setPhoto(e.target.value)} />
           </div>
         </div>
 
         <button
-          onClick={saveAndSwitch}
+          onClick={activateBusiness}
           disabled={!name.trim()}
-          className="btn-primary w-full flex items-center justify-center gap-2.5 py-3.5"
+          className="btn-primary w-full flex items-center justify-center gap-2.5"
+          style={{ padding: '13px', opacity: !name.trim() ? 0.4 : 1 }}
         >
           <Store size={15} />
           Activate Business mode
-          <ChevronRight size={15} className="ml-auto" />
+          <ChevronRight size={15} style={{ marginLeft: 'auto' }} />
         </button>
-        {!name.trim() && <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>Enter a business name to continue</p>}
+        {!name.trim() && (
+          <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>Enter a business name to continue</p>
+        )}
       </div>
 
-      {/* Testnet info */}
-      <div className="card p-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
-        <p className="text-xs font-semibold text-white/50 mb-2">Network</p>
+      {/* Network */}
+      <div className="glass-card p-4">
+        <p className="text-xs font-semibold mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Network</p>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #10b981' }} />
             <span className="text-sm text-white">Stellar Testnet</span>
           </div>
           <a href="https://laboratory.stellar.org/#account-creator?network=test" target="_blank" rel="noopener noreferrer"
-            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+            className="text-xs text-blue-400 flex items-center gap-1 hover:text-blue-300 transition-colors">
             Fund account <ExternalLink size={10} />
           </a>
         </div>

@@ -1,80 +1,97 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { WalletState, Transaction } from './types';
 import {
-  requestPublicKey, getBalance, getTransactions,
-  detectWallet, walletName, type TxRecord,
+  getBalance,
+  getTransactions,
+  getFreighterPublicKey,
+  isFreighterInstalled,
 } from './stellar';
 
-interface WalletState {
-  publicKey:  string | null;
-  balance:    string | null;
-  connected:  boolean;
-  loading:    boolean;
-  error:      string | null;
-  walletType: ReturnType<typeof detectWallet>;
+interface WalletContextValue {
+  wallet: WalletState;
+  transactions: Transaction[];
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  refresh: () => Promise<void>;
+  varialAvailable: boolean;
 }
 
-interface WalletCtx {
-  wallet:       WalletState;
-  transactions: TxRecord[];
-  connect:      () => Promise<void>;
-  disconnect:   () => void;
-  refresh:      () => Promise<void>;
-  walletLabel:  string;
-}
-
-const Ctx = createContext<WalletCtx | null>(null);
+const WalletContext = createContext<WalletContextValue | null>(null);
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [wallet, setWallet] = useState<WalletState>({
-    publicKey: null, balance: null, connected: false,
-    loading: false, error: null, walletType: null,
+    publicKey: null,
+    balance: null,
+    connected: false,
+    loading: false,
+    error: null,
   });
-  const [transactions, setTransactions] = useState<TxRecord[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [varialAvailable, setVarialAvailable] = useState(false);
+
+  // Check Varial Wallet on mount
+  useEffect(() => {
+    isFreighterInstalled().then(setVarialAvailable);
+  }, []);
 
   const connect = useCallback(async () => {
-    setWallet(w => ({ ...w, loading: true, error: null }));
+    setWallet((w) => ({ ...w, loading: true, error: null }));
     try {
-      const pubKey = await requestPublicKey();
-      const [balance, txs] = await Promise.all([
-        getBalance(pubKey),
-        getTransactions(pubKey),
-      ]);
-      setWallet({ publicKey: pubKey, balance, connected: true, loading: false, error: null, walletType: detectWallet() });
+      const pubKey = await getFreighterPublicKey();
+      if (!pubKey) throw new Error('Could not get public key from Varial Wallet');
+
+      const balance = await getBalance(pubKey);
+      const txs = await getTransactions(pubKey);
+
+      setWallet({
+        publicKey: pubKey,
+        balance,
+        connected: true,
+        loading: false,
+        error: null,
+      });
       setTransactions(txs);
-    } catch (e: any) {
-      setWallet(w => ({ ...w, loading: false, error: e?.message ?? 'Connection failed' }));
+    } catch (err: any) {
+      setWallet((w) => ({
+        ...w,
+        loading: false,
+        error: err.message || 'Connection failed',
+      }));
     }
   }, []);
 
   const disconnect = useCallback(() => {
-    setWallet({ publicKey: null, balance: null, connected: false, loading: false, error: null, walletType: null });
+    setWallet({
+      publicKey: null,
+      balance: null,
+      connected: false,
+      loading: false,
+      error: null,
+    });
     setTransactions([]);
   }, []);
 
   const refresh = useCallback(async () => {
     if (!wallet.publicKey) return;
-    const [balance, txs] = await Promise.all([
-      getBalance(wallet.publicKey),
-      getTransactions(wallet.publicKey),
-    ]);
-    setWallet(w => ({ ...w, balance }));
+    const balance = await getBalance(wallet.publicKey);
+    const txs = await getTransactions(wallet.publicKey);
+    setWallet((w) => ({ ...w, balance }));
     setTransactions(txs);
   }, [wallet.publicKey]);
 
   return (
-    <Ctx.Provider value={{
-      wallet, transactions, connect, disconnect, refresh,
-      walletLabel: walletName(wallet.walletType),
-    }}>
+    <WalletContext.Provider
+      value={{ wallet, transactions, connect, disconnect, refresh, varialAvailable }}
+    >
       {children}
-    </Ctx.Provider>
+    </WalletContext.Provider>
   );
 }
 
 export function useWallet() {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('useWallet must be inside WalletProvider');
+  const ctx = useContext(WalletContext);
+  if (!ctx) throw new Error('useWallet must be used inside WalletProvider');
   return ctx;
 }
