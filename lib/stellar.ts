@@ -212,3 +212,40 @@ export async function getFreighterPublicKey(): Promise<string | null> {
     throw err; // Let wallet-context surface the real message
   }
 }
+
+/**
+ * Send payment signed with a local Stellar keypair (Google auth path).
+ * The keypair is derived client-side — private key never leaves the browser.
+ */
+export async function sendPaymentLocal(
+  keypair:    import('@stellar/stellar-sdk').Keypair,
+  toPublicKey: string,
+  amount:     string,
+  memo:       string,
+): Promise<{ success: boolean; hash?: string; error?: string }> {
+  try {
+    Keypair.fromPublicKey(toPublicKey);
+    const sourceAccount = await server.loadAccount(keypair.publicKey());
+
+    const txBuilder = new TransactionBuilder(sourceAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(Operation.payment({
+        destination: toPublicKey,
+        asset: Asset.native(),
+        amount: amount.toString(),
+      }))
+      .setTimeout(30);
+
+    if (memo) txBuilder.addMemo({ type: 'text', value: memo } as any);
+
+    const transaction = txBuilder.build();
+    transaction.sign(keypair);
+
+    const result = await server.submitTransaction(transaction as any);
+    return { success: true, hash: (result as any).hash };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Payment failed' };
+  }
+}

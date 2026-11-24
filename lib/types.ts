@@ -70,3 +70,13 @@ export interface UserProfile {
   role:     UserRole;
   business: BusinessProfile;
 }
+
+// ── Google Auth ───────────────────────────────────────────
+export type AuthMethod = 'varial' | 'google';
+
+export interface GoogleUser {
+  sub:     string;
+  email:   string;
+  name:    string;
+  picture: string;
+}
