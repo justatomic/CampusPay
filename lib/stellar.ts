@@ -6,6 +6,7 @@ import {
   Operation,
   Keypair,
   BASE_FEE,
+  Memo,
 } from '@stellar/stellar-sdk';
 import type { Transaction } from './types';
 
@@ -133,7 +134,7 @@ export async function sendPayment(
       .setTimeout(30);
 
     if (memo) {
-      txBuilder.addMemo({ type: 'text', value: memo } as any);
+      txBuilder.addMemo(Memo.text(memo));
     }
 
     const transaction = txBuilder.build();
@@ -238,7 +239,7 @@ export async function sendPaymentLocal(
       }))
       .setTimeout(30);
 
-    if (memo) txBuilder.addMemo({ type: 'text', value: memo } as any);
+    if (memo) txBuilder.addMemo(Memo.text(memo));
 
     const transaction = txBuilder.build();
     transaction.sign(keypair);
